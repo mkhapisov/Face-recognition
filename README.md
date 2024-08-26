@@ -1,0 +1,1 @@
+Solving face recognition task with this labeled train dataset: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset/data
