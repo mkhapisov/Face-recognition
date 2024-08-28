@@ -1,4 +1,4 @@
-def draw_boxes(filename):
+def draw_boxes(filename: str):
     import matplotlib.pyplot as plt
     from mtcnn.mtcnn import MTCNN
     from matplotlib.patches import Rectangle, Circle
@@ -21,7 +21,7 @@ def draw_boxes(filename):
     
     plt.show()
 
-def get_faces(filename):
+def get_faces(filename: str):
     import matplotlib.pyplot as plt
     from mtcnn.mtcnn import MTCNN
 
@@ -38,7 +38,7 @@ def get_faces(filename):
     
     return faces_list
 
-def draw_faces(faces):
+def draw_faces(faces: list):
     import matplotlib.pyplot as plt
 
     for i in range(len(faces)):
@@ -48,6 +48,7 @@ def draw_faces(faces):
     
     plt.show()
 
-faces = get_faces('test1.jpg')
-print(faces)
-draw_faces(faces)
+if __name__ == '__main__':
+    faces = get_faces('../test1.jpg')
+    print(faces)
+    draw_faces(faces)
