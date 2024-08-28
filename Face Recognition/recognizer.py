@@ -1,10 +1,10 @@
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
 class Recognizer:
-    def __init__(self, model, criterion, optimizer, train_dataset, val_dataset, batch_size: int, epochs: int, device, lr_step=1000, lr_coef=1.0):
+    def __init__(self, model, criterion, optimizer, train_dataset: Dataset, val_dataset: Dataset, batch_size: int, epochs: int, device, lr_step: int = 1000, lr_coef: float = 1.0):
         self.batch_size = batch_size
         self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         self.val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
