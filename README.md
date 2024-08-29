@@ -10,11 +10,11 @@ Project's structure:
 ├── dataset <- train and validation dataset
 ├── test <- test dataset
 ├── Face Recognition
-│   ├── main.py    <- Main file of the project that launches all computations
+│   ├── main.py         <- Main file of the project that launches all computations
 │   │
-│   ├── aligner.py           <- Aligner - a program detecting and cutting faces from the initial photo
+│   ├── aligner.py      <- Aligner - a program detecting and cutting faces from the initial photo
 │   │
-│   └── recognizer.py       <- Recognizer - a program recognizing a person in the image that recognizer gets from aligner
+│   └── recognizer.py   <- Recognizer - a program recognizing a person in the image that recognizer gets from aligner
 └── .gitignore
 
 ```
