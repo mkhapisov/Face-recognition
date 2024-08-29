@@ -120,7 +120,7 @@ class Recognizer:
                 print("Decreasing learning rate: %f -> %f" % (self.optimizer.param_groups[0]['lr'], self.optimizer.param_groups[0]['lr'] * self.lr_coef))
                 self.optimizer.param_groups[0]['lr'] *= self.lr_coef
 
-        print("Max score: %f, Min loss: %f, Epoch: %d" % (max_score, min_loss, epoch_max_score))
+        print("Score of the best model: %f, Loss of the best model: %f, Epoch: %d" % (max_score, min_loss, epoch_max_score))
         if epoch_max_score > -1:
             checkpoint = torch.load('best_recognizer.pth')
             self.model.load_state_dict(checkpoint['model_state_dict'])

@@ -109,7 +109,7 @@ def get_trained_model(model, batch_size: int, epochs: int, init_lr: float, lr_st
     plt.grid()
     plt.plot(history['train_loss'], color='red')
     plt.plot(history['val_loss'], color='navy')
-    plt.title(f"Loss, min_val_loss = {min(history['val_loss'])})")
+    plt.title(f"Loss, min_val_loss = {np.round(min(history['val_loss']), 3)}")
     
     if path is None:
         plt.show()
@@ -121,7 +121,7 @@ def get_trained_model(model, batch_size: int, epochs: int, init_lr: float, lr_st
     plt.grid()
     plt.plot(history['train_acc'], color='red')
     plt.plot(history['val_acc'], color='navy')
-    plt.title(f"Accuracy, max_val_score = {max(history['val_acc'])}")
+    plt.title(f"Accuracy, max_val_score = {np.round(max(history['val_acc']), 3)}")
 
     if path is None:
         plt.show()
