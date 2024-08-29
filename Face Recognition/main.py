@@ -9,6 +9,7 @@ from torchvision.models import resnet18
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Union
+import argparse
 import aligner
 import recognizer
 
@@ -67,7 +68,8 @@ def get_data(root: str) -> Union[dict, list[str], list[str], list[int]]:
     labels = []
     for cur_root, cur_dirs, cur_files in os.walk(root):
         if len(cur_files) > 50:
-            name = cur_root[11:] # magic number
+            begin = max(cur_root.rfind('/'), cur_root.rfind('\\')) + 1
+            name = cur_root[begin:]
             label_encoder.append(name)
             data[name] = []
             for i in range(len(cur_files)):
@@ -75,7 +77,7 @@ def get_data(root: str) -> Union[dict, list[str], list[str], list[int]]:
                 data[name].append(file)
                 labels.append(label_encoder.index(name))
                 faces.append(file)
-                if len(data[name]) > 10:
+                if len(data[name]) >= 20:
                     break
     
     return data, faces, label_encoder, labels
@@ -92,16 +94,14 @@ def get_dataset(faces: list[str], labels: list[int], test_size: float, random_st
 
     return aligned_train_dataset, aligned_val_dataset
 
-def get_trained_model(batch_size: int, epochs: int, init_lr: float, lr_step: int, lr_coef: float, layers_to_unfreeze: int, path: str = None) -> Union[recognizer.Recognizer, dict]:
-    model = resnet18(weights='DEFAULT').to(device)
-    model.fc = nn.Linear(model.fc.in_features, len(label_encoder))
-
+def get_trained_model(model, batch_size: int, epochs: int, init_lr: float, lr_step: int, lr_coef: float, layers_to_unfreeze: int = None, path: str = None) -> Union[recognizer.Recognizer, dict]:
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=init_lr)
     r = recognizer.Recognizer(model, criterion, optimizer, aligned_train_dataset, aligned_val_dataset, \
                                batch_size, epochs, device, lr_step=lr_step, lr_coef=lr_coef)
 
-    r.freeze_layers(layers_to_unfreeze)
+    if layers_to_unfreeze is not None:
+        r.freeze_layers(layers_to_unfreeze)
 
     history = r.train()
 
@@ -109,7 +109,7 @@ def get_trained_model(batch_size: int, epochs: int, init_lr: float, lr_step: int
     plt.grid()
     plt.plot(history['train_loss'], color='red')
     plt.plot(history['val_loss'], color='navy')
-    plt.title("Loss")
+    plt.title(f"Loss, min_val_loss = {min(history['val_loss'])})")
     
     if path is None:
         plt.show()
@@ -121,7 +121,7 @@ def get_trained_model(batch_size: int, epochs: int, init_lr: float, lr_step: int
     plt.grid()
     plt.plot(history['train_acc'], color='red')
     plt.plot(history['val_acc'], color='navy')
-    plt.title("Accuracy")
+    plt.title(f"Accuracy, max_val_score = {max(history['val_acc'])}")
 
     if path is None:
         plt.show()
@@ -146,13 +146,27 @@ def get_test_dataset(root: str) -> Union[DataLoader, list[str]]:
 def draw_results(r: recognizer.Recognizer, test_loader: DataLoader, test_faces: list[str], label_encoder: list[str], device: torch.device, path: str = None):
     cur_image_index = 0
     fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
+    running_corrects = 0
     for inputs in test_loader:
         inputs = torch.FloatTensor(inputs).to(device)
+
         preds = r.predict_one_sample(inputs)
         predicted = np.argmax(preds)
-        image = plt.imread(test_faces[cur_image_index])
+
+        filename = test_faces[cur_image_index]
+
+        begin = max(filename.rfind('/'), filename.rfind('\\')) + 1
+        end = filename.rfind('_')
+        
+        label = filename[begin:end]
+
+        if label_encoder[predicted] == label:
+            running_corrects += 1
+
+        image = plt.imread(filename)
         ax[cur_image_index % 5].imshow(image)
         ax[cur_image_index % 5].set_title(label_encoder[predicted])
+
         cur_image_index += 1
         if cur_image_index % 5 == 0:
             if path is None:
@@ -162,15 +176,36 @@ def draw_results(r: recognizer.Recognizer, test_loader: DataLoader, test_faces: 
                 plt.savefig(path + f'result{cur_image_index // 5}.jpg', dpi=500)
                 plt.close()
             fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
+    
+    test_accuracy = running_corrects / cur_image_index
+    print("Accuracy: %f" %(test_accuracy))
 
 if __name__ == '__main__':
-    root = '../dataset'
+
+    parser = argparse.ArgumentParser(prog='Face recognizer', description="Input path to train dataset, path to test dataset, path to results folder, test size and random state")
+    parser.add_argument('train_root')
+    parser.add_argument('test_root')
+    parser.add_argument('results_path')
+    parser.add_argument('test_size')
+    parser.add_argument('random_state')
+    args = parser.parse_args()
+    
+    train_root = args.train_root
+    test_root = args.test_root
+    results_path = args.results_path
+    test_size = float(args.test_size)
+    random_state = int(args.random_state)
+
+    #train_root = '../Dataset/Train'
+    #test_root = '../Dataset/Test'
+    #results_path = 'results/'
+    #test_size = 0.3
+    #random_state = 42
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    data, faces, label_encoder, labels = get_data(root)
+    data, faces, label_encoder, labels = get_data(train_root)
 
-    test_size = 0.3
-    random_state = 42
     aligned_train_dataset, aligned_val_dataset = get_dataset(faces, labels, test_size, random_state)
 
     batch_size = 32
@@ -179,12 +214,15 @@ if __name__ == '__main__':
     lr_step = 10
     lr_coef = 0.5
     layers_to_unfreeze = 30
-    path = 'results/'
-    r, history = get_trained_model(batch_size, epochs, init_lr, lr_step, lr_coef, layers_to_unfreeze, path)
 
-    root = '../test'
+    model = resnet18(weights='DEFAULT').to(device)
+    model.fc = nn.Linear(model.fc.in_features, len(label_encoder))
+
+    r, history = get_trained_model(model, batch_size, epochs, init_lr, lr_step, lr_coef, layers_to_unfreeze, results_path)
+
+    root = '../Dataset/Test'
     test_loader, test_faces = get_test_dataset(root)
 
-    draw_results(r, test_loader, test_faces, label_encoder, device, path)
+    draw_results(r, test_loader, test_faces, label_encoder, device, results_path)
 
 
