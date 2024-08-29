@@ -1,6 +1,6 @@
 # Solving face recognition task using Pytorch, MTCNN and ResNet18
 This project uses MTCNN (https://github.com/ipazc/mtcnn) as an aligner and ResNet18 as a recognizer.
-This model achieved 87.5% accuracy on validation data and 91.1% on test data.
+This model achieved 90.3% accuracy on validation data and 92.1% on test data.
 Used dataset: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset/data
 
 ```
