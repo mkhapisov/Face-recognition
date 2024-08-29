@@ -1,4 +1,5 @@
-# Solving face recognition task using Pytorch, MTCNN (https://github.com/ipazc/mtcnn) as an aligner and resnet18 as a recognizer (classifier). 
+# Solving face recognition task using Pytorch, MTCNN and ResNet18
+This project uses MTCNN (https://github.com/ipazc/mtcnn) as an aligner and ResNet18 as a recognizer.
 Used dataset: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset/data
 
 ```
