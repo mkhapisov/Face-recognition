@@ -2,9 +2,12 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+from typing import Union
+from numpy import ndarray
 
 class Recognizer:
-    def __init__(self, model, criterion, optimizer, train_dataset: Dataset, val_dataset: Dataset, batch_size: int, epochs: int, device, lr_step: int = 1000, lr_coef: float = 1.0):
+    def __init__(self, model, criterion, optimizer, train_dataset: Dataset, val_dataset: Dataset, batch_size: int, \
+                 epochs: int, device, lr_step: int = 1000, lr_coef: float = 1.0):
         self.batch_size = batch_size
         self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         self.val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -22,7 +25,7 @@ class Recognizer:
         for param in list(self.model.parameters())[:-layers_to_unfreeze]:
             param.requires_grad = False
     
-    def train_epoch(self):
+    def train_epoch(self) -> Union[float, float]:
         self.model.train()
         running_loss = 0.0
         running_corrects = 0
@@ -49,7 +52,7 @@ class Recognizer:
         
         return train_loss, train_acc.item()
     
-    def eval_epoch(self):
+    def eval_epoch(self) -> Union[float, float]:
         self.model.eval()
         running_loss = 0.0
         running_corrects = 0
@@ -73,7 +76,7 @@ class Recognizer:
         
         return train_loss, train_acc.item()
     
-    def train(self):
+    def train(self) -> dict:
         history = {
             'train_loss': [],
             'train_acc': [],
@@ -123,7 +126,7 @@ class Recognizer:
             self.model.load_state_dict(checkpoint['model_state_dict'])
         return history
     
-    def predict(self, test_loader):
+    def predict(self, test_loader: DataLoader) -> ndarray:
         self.model.eval()
         logits = []
         for inputs, labels in test_loader:
@@ -135,7 +138,7 @@ class Recognizer:
         probs = F.softmax(torch.cat(logits), dim=-1).numpy()
         return probs
     
-    def predict_one_sample(self, sample):
+    def predict_one_sample(self, sample: torch.FloatTensor) -> ndarray:
         with torch.no_grad():
             self.model.eval()
             sample = sample.to(self.device)

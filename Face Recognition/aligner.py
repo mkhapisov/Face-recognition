@@ -1,8 +1,11 @@
-def draw_boxes(filename: str):
-    import matplotlib.pyplot as plt
-    from mtcnn.mtcnn import MTCNN
-    from matplotlib.patches import Rectangle, Circle
+import matplotlib.pyplot as plt
+from mtcnn.mtcnn import MTCNN
+from matplotlib.patches import Rectangle, Circle
+from numpy import ndarray
 
+def draw_boxes(filename: str, path: str = None):
+    # it's an additional function for drawing detection boxes and some key points
+    # this function isn't used in code, it's needed only for debugging
     pixels = plt.imread(filename)
     plt.imshow(pixels)
     ax = plt.gca()
@@ -19,12 +22,13 @@ def draw_boxes(filename: str):
             dot = Circle(value, radius=2, color='navy')
             ax.add_patch(dot)
     
-    plt.show()
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path + f'{filename}_boxed.jpg', dpi=500)
+        plt.close()
 
-def get_faces(filename: str):
-    import matplotlib.pyplot as plt
-    from mtcnn.mtcnn import MTCNN
-
+def get_faces(filename: str) -> list[ndarray]:
     pixels = plt.imread(filename)
     detector = MTCNN()
     faces = detector.detect_faces(pixels)
@@ -38,17 +42,16 @@ def get_faces(filename: str):
     
     return faces_list
 
-def draw_faces(faces: list):
-    import matplotlib.pyplot as plt
-
+def draw_faces(faces: list[ndarray], path: str = None):
+    # it's an additional function for showing faces getting from get_faces
+    # this function isn't used in code, it's needed only for debugging
     for i in range(len(faces)):
         plt.subplot(1, len(faces), i + 1)
         plt.axis('off')
         plt.imshow(faces[i])
     
-    plt.show()
-
-if __name__ == '__main__':
-    faces = get_faces('../test1.jpg')
-    print(faces)
-    draw_faces(faces)
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path + 'faces.jpg', dpi=500)
+        plt.close()

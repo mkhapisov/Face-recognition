@@ -8,11 +8,12 @@ from torchvision.transforms import v2
 from torchvision.models import resnet18
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from typing import Union
 import aligner
 import recognizer
 
 class FacesDataset(Dataset):
-    def __init__(self, data, mode):
+    def __init__(self, data: list, mode: str):
         super().__init__()
         self.data = data.copy()
         self.mode = mode
@@ -23,7 +24,7 @@ class FacesDataset(Dataset):
     def __len__(self):
         return len(self.data)
     
-    def __getitem__(self, index):
+    def __getitem__(self, index: int):
         data_transforms = {
             'train': v2.Compose([
                 v2.Resize((250, 250)),
@@ -59,11 +60,7 @@ class FacesDataset(Dataset):
             x = data_transforms[self.mode](x.permute(2, 0, 1))
             return x, y
 
-if __name__ == '__main__':
-    root = '../dataset'
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(device)
-
+def get_data(root: str) -> Union[dict, list[str], list[str], list[int]]:
     data = {}
     faces = []
     label_encoder = []
@@ -80,26 +77,12 @@ if __name__ == '__main__':
                 faces.append(file)
                 if len(data[name]) > 10:
                     break
+    
+    return data, faces, label_encoder, labels
 
-    print(len(label_encoder))
-
-    print(label_encoder)
-
-    for i in range(5):
-        fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
-        for j in range(5):
-            VP = data['George_W_Bush']
-            idx = np.random.randint(len(VP))
-            image = plt.imread(VP[idx])
-            ax[j].imshow(image)
-            ax[j].set_title('George_W_Bush')
-        plt.tight_layout()
-        plt.show()
-
-    train_faces, val_faces, train_labels, val_labels = train_test_split(faces, labels, test_size=0.3, random_state=42, shuffle=True)
+def get_dataset(faces: list[str], labels: list[int], test_size: float, random_state: int) -> Union[FacesDataset, FacesDataset]:
+    train_faces, val_faces, train_labels, val_labels = train_test_split(faces, labels, test_size=test_size, random_state=random_state, shuffle=True)
     #shuffle=True is needed because otherwise there would be a small amount of different people in train
-
-    print(len(train_faces))
 
     aligned_train_data = [(aligner.get_faces(train_faces[i])[0], train_labels[i]) for i in tqdm(range(len(train_faces)))]
     aligned_val_data = [(aligner.get_faces(val_faces[i])[0], val_labels[i]) for i in tqdm(range(len(val_faces)))]
@@ -107,82 +90,101 @@ if __name__ == '__main__':
     aligned_train_dataset = FacesDataset(aligned_train_data, mode='train')
     aligned_val_dataset = FacesDataset(aligned_val_data, mode='val')
 
-    for i in range(5):
-        fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
-        for j in range(5):
-            idx = np.random.randint(len(aligned_train_dataset))
-            image, name = aligned_train_dataset[idx]
-            ax[j].imshow(image.permute(1, 2, 0))
-            ax[j].set_title(label_encoder[name])
-        plt.tight_layout()
-        plt.show()
+    return aligned_train_dataset, aligned_val_dataset
 
+def get_trained_model(batch_size: int, epochs: int, init_lr: float, lr_step: int, lr_coef: float, layers_to_unfreeze: int, path: str = None) -> Union[recognizer.Recognizer, dict]:
     model = resnet18(weights='DEFAULT').to(device)
     model.fc = nn.Linear(model.fc.in_features, len(label_encoder))
-    print(model)
 
     criterion = nn.CrossEntropyLoss()
-    init_lr = 1e-3
     optimizer = torch.optim.AdamW(model.parameters(), lr=init_lr)
+    r = recognizer.Recognizer(model, criterion, optimizer, aligned_train_dataset, aligned_val_dataset, \
+                               batch_size, epochs, device, lr_step=lr_step, lr_coef=lr_coef)
 
-    batch_size = 32
-    epochs = 50
-    r = recognizer.Recognizer(model, criterion, optimizer, aligned_train_dataset, aligned_val_dataset, batch_size, epochs, device, lr_step=10, lr_coef=0.5)
-
-    layers_to_unfreeze = 30
     r.freeze_layers(layers_to_unfreeze)
 
     history = r.train()
-    
+
     plt.figure(figsize=(15, 10))
     plt.grid()
     plt.plot(history['train_loss'], color='red')
     plt.plot(history['val_loss'], color='navy')
     plt.title("Loss")
-    plt.show()
+    
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path + 'loss.jpg', dpi=500)
+        plt.close()
 
     plt.figure(figsize=(15, 10))
     plt.grid()
     plt.plot(history['train_acc'], color='red')
     plt.plot(history['val_acc'], color='navy')
     plt.title("Accuracy")
-    plt.show()
 
-    root = '../test'
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path + 'accuracy.jpg', dpi=500)
+        plt.close()
+
+    return r, history
+
+def get_test_dataset(root: str) -> Union[DataLoader, list[str]]:
     test_faces = []
     for cur_root, cur_dirs, cur_files in os.walk(root):
         for i in range(len(cur_files)):
             file = '/'.join((root, cur_files[i]))
             test_faces.append(file)
-
-    print(len(test_faces))
-
-    for i in range(5):
-        fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
-        for j in range(5):
-            idx = np.random.randint(len(test_faces))
-            image = plt.imread(test_faces[idx])
-            ax[j].imshow(image)
-        plt.tight_layout()
-        plt.show()
     
     aligned_test_data = [aligner.get_faces(test_faces[i])[0] for i in tqdm(range(len(test_faces)))]
     aligned_test_dataset = FacesDataset(aligned_test_data, mode='test')
     test_loader = DataLoader(aligned_test_dataset, batch_size=1, shuffle=False)
+    return test_loader, test_faces
 
-    i = 0
+def draw_results(r: recognizer.Recognizer, test_loader: DataLoader, test_faces: list[str], label_encoder: list[str], device: torch.device, path: str = None):
+    cur_image_index = 0
     fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
     for inputs in test_loader:
         inputs = torch.FloatTensor(inputs).to(device)
         preds = r.predict_one_sample(inputs)
         predicted = np.argmax(preds)
-        image = plt.imread(test_faces[i])
-        ax[i % 5].imshow(image)
-        ax[i % 5].set_title(label_encoder[predicted])
-        i += 1
-        if i % 5 == 0:
-            plt.tight_layout()
-            plt.show()
+        image = plt.imread(test_faces[cur_image_index])
+        ax[cur_image_index % 5].imshow(image)
+        ax[cur_image_index % 5].set_title(label_encoder[predicted])
+        cur_image_index += 1
+        if cur_image_index % 5 == 0:
+            if path is None:
+                plt.tight_layout()
+                plt.show()
+            else:
+                plt.savefig(path + f'result{cur_image_index // 5}.jpg', dpi=500)
+                plt.close()
             fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(15, 5))
+
+if __name__ == '__main__':
+    root = '../dataset'
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    data, faces, label_encoder, labels = get_data(root)
+
+    test_size = 0.3
+    random_state = 42
+    aligned_train_dataset, aligned_val_dataset = get_dataset(faces, labels, test_size, random_state)
+
+    batch_size = 32
+    epochs = 50
+    init_lr = 1e-3
+    lr_step = 10
+    lr_coef = 0.5
+    layers_to_unfreeze = 30
+    path = 'results/'
+    r, history = get_trained_model(batch_size, epochs, init_lr, lr_step, lr_coef, layers_to_unfreeze, path)
+
+    root = '../test'
+    test_loader, test_faces = get_test_dataset(root)
+
+    draw_results(r, test_loader, test_faces, label_encoder, device, path)
 
 
