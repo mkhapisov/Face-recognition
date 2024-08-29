@@ -148,7 +148,7 @@ def get_trained_model(
     plt.grid()
     plt.plot(history["train_loss"], color="navy", label="train loss")
     plt.plot(history["val_loss"], color="red", label="validation loss")
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.title(f"Loss, min_val_loss = {np.round(min(history['val_loss']), 3)}")
 
     if path is None:
@@ -161,7 +161,7 @@ def get_trained_model(
     plt.grid()
     plt.plot(history["train_acc"], color="navy", label="train accuracy")
     plt.plot(history["val_acc"], color="red", label="validation accuracy")
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.title(f"Accuracy, max_val_score = {np.round(max(history['val_acc']), 3)}")
 
     if path is None:
