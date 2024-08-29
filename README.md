@@ -19,3 +19,5 @@ Project's structure:
 └── .gitignore
 
 ```
+![loss](https://github.com/mkhapisov/Face-recognition/tree/develop/Face%20Recognition/results/loss.jpg)
+![accuracy](https://github.com/mkhapisov/Face-recognition/tree/develop/Face%20Recognition/results/accuracy.jpg)
