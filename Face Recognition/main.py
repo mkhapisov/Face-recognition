@@ -287,7 +287,6 @@ if __name__ == "__main__":
         results_path,
     )
 
-    root = "../Dataset/Test"
-    test_loader, test_faces = get_test_dataset(root)
+    test_loader, test_faces = get_test_dataset(test_root)
 
     draw_results(r, test_loader, test_faces, label_encoder, device, results_path)
