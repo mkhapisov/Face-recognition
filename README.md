@@ -14,7 +14,7 @@ Project's structure:
 │   │
 │   ├── aligner.py      <- Aligner - a program detecting and cutting faces from the initial photo
 │   │
-│   └── recognizer.py   <- Recognizer - a program recognizing a person in the image that recognizer gets from aligner
+│   └── recognizer.py   <- Recognizer - a program recognizing a person in the image that recognizer gets from the aligner
 └── .gitignore
 
 ```
