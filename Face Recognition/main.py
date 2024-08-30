@@ -237,13 +237,19 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         prog="Face recognizer",
-        description="Input path to train dataset, path to test dataset, path to results folder, test size and random state",
+        description="Input path to train dataset, path to test dataset, path to results folder, test size, random state, batch_size, epochs, init_lr, lr_step, lr_coef and layers_to_unfreeze",
     )
     parser.add_argument("train_root")
     parser.add_argument("test_root")
     parser.add_argument("results_path")
     parser.add_argument("test_size")
     parser.add_argument("random_state")
+    parser.add_argument("batch_size")
+    parser.add_argument("epochs")
+    parser.add_argument("init_lr")
+    parser.add_argument("--lr_step")
+    parser.add_argument("--lr_coef")
+    parser.add_argument("--layers_to_unfreeze")
     args = parser.parse_args()
 
     train_root = args.train_root
@@ -251,12 +257,36 @@ if __name__ == "__main__":
     results_path = args.results_path
     test_size = float(args.test_size)
     random_state = int(args.random_state)
+    batch_size = int(args.batch_size)
+    epochs = int(args.epochs)
+    init_lr = float(args.init_lr)
+
+    if args.lr_step:
+        lr_step = int(args.lr_step)
+    else:
+        lr_step = None
+
+    if args.lr_coef:
+        lr_coef = float(args.lr_coef)
+    else:
+        lr_coef = 1.0
+
+    if args.layers_to_unfreeze:
+        layers_to_unfreeze = int(args.layers_to_unfreeze)
+    else:
+        layers_to_unfreeze = None
 
     # train_root = '../Dataset/Train'
     # test_root = '../Dataset/Test'
     # results_path = 'results/'
     # test_size = 0.3
     # random_state = 42
+    # batch_size = 32
+    # epochs = 50
+    # init_lr = 1e-3
+    # lr_step = 10
+    # lr_coef = 0.5
+    # layers_to_unfreeze = 30
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -265,13 +295,6 @@ if __name__ == "__main__":
     aligned_train_dataset, aligned_val_dataset = get_dataset(
         faces, labels, test_size, random_state
     )
-
-    batch_size = 32
-    epochs = 50
-    init_lr = 1e-3
-    lr_step = 10
-    lr_coef = 0.5
-    layers_to_unfreeze = 30
 
     model = resnet18(weights="DEFAULT").to(device)
     model.fc = nn.Linear(model.fc.in_features, len(label_encoder))

@@ -17,7 +17,7 @@ class Recognizer:
         batch_size: int,
         epochs: int,
         device,
-        lr_step: int = 1000,
+        lr_step: int = None,
         lr_coef: float = 1.0,
     ):
         self.batch_size = batch_size
@@ -127,15 +127,16 @@ class Recognizer:
                 )
                 print("Model saved!")
 
-            if epoch % self.lr_step == 0:
-                print(
-                    "Decreasing learning rate: %f -> %f"
-                    % (
-                        self.optimizer.param_groups[0]["lr"],
-                        self.optimizer.param_groups[0]["lr"] * self.lr_coef,
+            if self.lr_step is not None:
+                if epoch % self.lr_step == 0:
+                    print(
+                        "Decreasing learning rate: %f -> %f"
+                        % (
+                            self.optimizer.param_groups[0]["lr"],
+                            self.optimizer.param_groups[0]["lr"] * self.lr_coef,
+                        )
                     )
-                )
-                self.optimizer.param_groups[0]["lr"] *= self.lr_coef
+                    self.optimizer.param_groups[0]["lr"] *= self.lr_coef
 
         print(
             "Score of the best model: %f, Loss of the best model: %f, Epoch: %d"
