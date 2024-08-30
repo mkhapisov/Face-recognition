@@ -37,7 +37,7 @@ class FacesDataset(Dataset):
                         [
                             v2.RandomAdjustSharpness(sharpness_factor=2),
                             v2.RandomAdjustSharpness(sharpness_factor=1),
-                            v2.RandomAdjustSharpness(sharpness_factor=0),
+                            v2.RandomAdjustSharpness(sharpness_factor=0)
                         ]
                     ),
                     v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
