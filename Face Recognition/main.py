@@ -37,7 +37,7 @@ class FacesDataset(Dataset):
                         [
                             v2.RandomAdjustSharpness(sharpness_factor=2),
                             v2.RandomAdjustSharpness(sharpness_factor=1),
-                            v2.RandomAdjustSharpness(sharpness_factor=0),
+                            v2.RandomAdjustSharpness(sharpness_factor=0)
                         ]
                     ),
                     v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -239,17 +239,17 @@ if __name__ == "__main__":
         prog="Face recognizer",
         description="Input path to train dataset, path to test dataset, path to results folder, test size, random state, batch_size, epochs, init_lr, lr_step, lr_coef and layers_to_unfreeze",
     )
-    parser.add_argument("train_root")
-    parser.add_argument("test_root")
-    parser.add_argument("results_path")
-    parser.add_argument("test_size")
-    parser.add_argument("random_state")
-    parser.add_argument("batch_size")
-    parser.add_argument("epochs")
-    parser.add_argument("init_lr")
-    parser.add_argument("--lr_step")
-    parser.add_argument("--lr_coef")
-    parser.add_argument("--layers_to_unfreeze")
+    parser.add_argument("train_root", default="../Dataset/Train")
+    parser.add_argument("test_root", default="../Dataset/Test")
+    parser.add_argument("results_path", default="results/")
+    parser.add_argument("test_size", default=0.3)
+    parser.add_argument("random_state", default=42)
+    parser.add_argument("batch_size", default=32)
+    parser.add_argument("epochs", default=50)
+    parser.add_argument("init_lr", default=1e-3)
+    parser.add_argument("lr_step", default=10)
+    parser.add_argument("lr_coef", default=0.5)
+    parser.add_argument("layers_to_unfreeze", default=30)
     args = parser.parse_args()
 
     train_root = args.train_root
@@ -260,33 +260,9 @@ if __name__ == "__main__":
     batch_size = int(args.batch_size)
     epochs = int(args.epochs)
     init_lr = float(args.init_lr)
-
-    if args.lr_step:
-        lr_step = int(args.lr_step)
-    else:
-        lr_step = None
-
-    if args.lr_coef:
-        lr_coef = float(args.lr_coef)
-    else:
-        lr_coef = 1.0
-
-    if args.layers_to_unfreeze:
-        layers_to_unfreeze = int(args.layers_to_unfreeze)
-    else:
-        layers_to_unfreeze = None
-
-    # train_root = '../Dataset/Train'
-    # test_root = '../Dataset/Test'
-    # results_path = 'results/'
-    # test_size = 0.3
-    # random_state = 42
-    # batch_size = 32
-    # epochs = 50
-    # init_lr = 1e-3
-    # lr_step = 10
-    # lr_coef = 0.5
-    # layers_to_unfreeze = 30
+    lr_step = int(args.lr_step)
+    lr_coef = float(args.lr_coef)
+    layers_to_unfreeze = int(args.layers_to_unfreeze)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
